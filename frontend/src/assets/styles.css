@@ -1,0 +1,143 @@
+/* src/assets/styles.css */
+/* Make app take full height */
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+/* Flex wrapper for sticky footer */
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* full viewport height */
+}
+
+/* Main content grows to push footer down */
+.container {
+  flex: 1;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Press Start 2P', cursive, sans-serif;
+  background: #f8f9fa; /* light Pokémon-inspired gray */
+  color: #2a2a2a;
+  line-height: 1.6;
+}
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 2rem;
+}
+
+/* Navbar */
+.navbar {
+  background: #ffcb05; /* Pikachu yellow */
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 4px solid #2a75bb; /* Pokémon blue */
+}
+
+.navbar h1 {
+  color: #2a75bb;
+  font-size: 1.5rem;
+}
+
+.navbar nav a {
+  margin: 0 1rem;
+  text-decoration: none;
+  color: #2a75bb;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.navbar nav a:hover {
+  color: #ff0000; /* Pokéball red */
+}
+
+.navbar nav a.router-link-exact-active {
+  border-bottom: 2px solid #2a75bb;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 1rem;
+  background: #2a75bb;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+/* Buttons */
+button {
+  background: #2a75bb;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+  font-family: inherit;
+}
+
+button:hover {
+  background: #ff0000; /* Pokéball red */
+}
+
+/* Input & Selects */
+input,
+select {
+  padding: 0.5rem;
+  border: 2px solid #2a75bb;
+  border-radius: 6px;
+  font-family: inherit;
+  margin: 0.3rem;
+}
+
+/* Cards (for database, results, etc.) */
+.card {
+  background: white;
+  border: 2px solid #2a75bb;
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1rem 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: 0.2s;
+}
+
+.card:hover {
+  transform: scale(1.02);
+}
+
+/* Titles */
+h2,
+h3 {
+  color: #2a75bb;
+  margin-bottom: 1rem;
+}
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 1rem;
+  background: #2a75bb;
+  color: #fff;
+  font-size: 0.9rem;
+  margin-top: 2rem;
+  border-top: 4px solid #ffcb05;
+}
+/* src/assets/styles.css */
+/* Import Pokémon font globally */
+.brand {
+  font-family: 'Pokemon Solid', sans-serif; /* exact name from CDN */
+}
