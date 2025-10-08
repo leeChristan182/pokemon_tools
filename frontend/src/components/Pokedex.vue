@@ -1,6 +1,8 @@
 <template>
   <div class="pokedex">
-    <h1 class="page-title">Pokédex</h1>
+<h1 class="page-title">
+  <span class="pokemon-text">Pokémon</span> Pokédex
+</h1>
 
     <!-- Filters -->
     <div class="filters">
@@ -164,6 +166,7 @@ function goToPage(p) {
   margin-bottom: 2rem;
 }
 .page-title {
+  font-family: 'Pokemon Solid', sans-serif;
   font-size: 3rem;
   font-weight: 800;
   background: linear-gradient(90deg, #202020, #1e1d1d, #3f3e38);
@@ -173,6 +176,21 @@ function goToPage(p) {
   letter-spacing: 2px;
   margin: 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Only affects the word “Pokémon” */
+.pokemon-text {
+  display: inline-block; /* ensures styles don’t leak into Pokédex */
+  color: #ffde00; /* bright visible yellow */
+  -webkit-text-stroke: 2px #2a75bb; /* strong blue outline */
+  text-shadow:
+    0 0 3px #2a75bb,
+    2px 2px 0 #3b4cca,
+    3px 3px 0 #0a285f,
+    0 0 8px #ffec80; /* subtle yellow glow */
+  letter-spacing: 1px;
+  -webkit-background-clip: initial; /* reset inherited gradient */
+  -webkit-text-fill-color: initial;
 }
 
 /* Filters */

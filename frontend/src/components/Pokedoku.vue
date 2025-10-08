@@ -1,6 +1,6 @@
 <template>
   <div ref="rootRef" class="pokedoku-game">
-    <h1 class="title">PokéDoku — Clone</h1>
+    <h1 class="title">PokéDoku</h1>
 
     <!-- Controls -->
     <div class="top-controls">
