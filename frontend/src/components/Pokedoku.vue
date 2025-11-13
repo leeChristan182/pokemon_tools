@@ -508,6 +508,8 @@ async function submitName(inputName) {
   closeSearch()
   if (correct.value === GRID * GRID) {
     isWin.value = true
+    // Save game to database
+    saveGameToDatabase()
   }
 }
 
@@ -579,6 +581,27 @@ async function giveUp() {
 /* Toggle unlimited mode */
 function toggleUnlimited() {
   unlimited.value = !unlimited.value
+}
+
+/* Save game to database */
+async function saveGameToDatabase() {
+  try {
+    const gridData = board.map(row => 
+      row.map(cell => ({
+        answer: cell.answer,
+        correct: cell.correct
+      }))
+    );
+    
+    await axios.post('/api/pokedoku-games', {
+      grid_data: JSON.stringify(gridData),
+      guesses_remaining: 0,
+      score: correct.value,
+      completed: true
+    });
+  } catch (error) {
+    console.error('Failed to save Pokedoku game:', error);
+  }
 }
 
 /* Initialize */

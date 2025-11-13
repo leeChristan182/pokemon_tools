@@ -1,5 +1,6 @@
 <script setup>
 import { ref, reactive } from "vue";
+import axios from "axios";
 
 const mode = ref("gen"); // "gen" or "general"
 const gen = ref(1);
@@ -112,9 +113,27 @@ async function checkGuess() {
 }
 
 // End game
-function endGame(forced = false) {
+async function endGame(forced = false) {
   gameActive.value = false;
   clearInterval(timer.value);
+  
+  // Save score to backend database
+  if (score.value > 0) {
+    try {
+      const playerName = prompt('Enter your name for the leaderboard:') || 'Anonymous';
+      const totalPokemon = quizList.value.length;
+      const quizTypeLabel = mode.value === 'gen' ? `Gen ${gen.value}` : 'All Pokemon';
+      
+      await axios.post('/api/quiz-scores', {
+        player_name: playerName,
+        score: score.value,
+        total_questions: totalPokemon,
+        quiz_type: quizTypeLabel
+      });
+    } catch (error) {
+      console.error('Failed to save quiz score:', error);
+    }
+  }
 }
 </script>
 

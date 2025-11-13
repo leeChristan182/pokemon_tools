@@ -70,6 +70,7 @@
 <script setup>
 import { reactive, ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { berries } from '@/data/berries.js' // import your 64 unique berries
+import axios from 'axios'
 
 // Grid options
 const gridOptions = [4, 6, 8]
@@ -183,13 +184,29 @@ function endGame() {
 }
 
 // Leaderboard
-function saveToLeaderboard() {
+async function saveToLeaderboard() {
   const record = { grid: gridSize.value, time: elapsedTime.value, moves: moves.value }
+  
+  // Save to localStorage (for offline backup)
   const existing = JSON.parse(localStorage.getItem('memory_leaderboard') || '[]')
   existing.push(record)
   existing.sort((a, b) => a.time - b.time || a.moves - b.moves)
   leaderboard.value = existing.slice(0, 10)
   localStorage.setItem('memory_leaderboard', JSON.stringify(leaderboard.value))
+  
+  // Save to backend database
+  try {
+    const playerName = prompt('Enter your name for the leaderboard:') || 'Anonymous'
+    await axios.post('/api/berry-scores', {
+      player_name: playerName,
+      score: score.value,
+      moves: moves.value,
+      time_seconds: elapsedTime.value
+    })
+  } catch (error) {
+    console.error('Failed to save score to database:', error)
+    alert('Score saved locally but failed to save to server')
+  }
 }
 
 // Controls
@@ -208,8 +225,19 @@ function closePopup() {
 }
 
 // Load leaderboard
-onMounted(() => {
+onMounted(async () => {
+  // Load from localStorage first
   leaderboard.value = JSON.parse(localStorage.getItem('memory_leaderboard') || '[]')
+  
+  // Try to load from backend
+  try {
+    const response = await axios.get('/api/berry-scores?limit=10')
+    if (response.data && response.data.length > 0) {
+      leaderboard.value = response.data
+    }
+  } catch (error) {
+    // Use local leaderboard as fallback
+  }
 })
 
 onBeforeUnmount(() => {
