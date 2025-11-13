@@ -17,6 +17,11 @@ router.get("/", (req, res) => {
 router.get("/:id", (req, res) => {
   try {
     const pokemonId = parseInt(req.params.id);
+    
+    if (isNaN(pokemonId)) {
+      return res.status(400).json({ error: "Invalid Pokemon ID" });
+    }
+    
     const editedPokemon = EditedPokemon.getById(pokemonId);
     
     if (!editedPokemon) {
@@ -33,6 +38,12 @@ router.get("/:id", (req, res) => {
 // Create or update edited Pokemon
 router.post("/", (req, res) => {
   try {
+    const { pokemon_id, pokemon_name } = req.body;
+    
+    if (!pokemon_id || !pokemon_name) {
+      return res.status(400).json({ error: "Pokemon ID and name are required" });
+    }
+    
     const result = EditedPokemon.upsert(req.body);
     res.status(201).json({ 
       message: "Pokemon data saved successfully", 

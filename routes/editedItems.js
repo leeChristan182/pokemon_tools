@@ -17,6 +17,11 @@ router.get("/", (req, res) => {
 router.get("/:id", (req, res) => {
   try {
     const itemId = parseInt(req.params.id);
+    
+    if (isNaN(itemId)) {
+      return res.status(400).json({ error: "Invalid item ID" });
+    }
+    
     const editedItem = EditedItem.getById(itemId);
     
     if (!editedItem) {
@@ -33,6 +38,12 @@ router.get("/:id", (req, res) => {
 // Create or update edited item
 router.post("/", (req, res) => {
   try {
+    const { item_id, item_name } = req.body;
+    
+    if (!item_id || !item_name) {
+      return res.status(400).json({ error: "Item ID and name are required" });
+    }
+    
     const result = EditedItem.upsert(req.body);
     res.status(201).json({ 
       message: "Item data saved successfully", 

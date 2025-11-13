@@ -9,7 +9,7 @@ class EditedItem {
 
   // Get all edited items
   static getAll() {
-    const stmt = db.prepare("SELECT * FROM edited_items");
+    const stmt = db.prepare("SELECT * FROM edited_items ORDER BY updated_at DESC");
     return stmt.all();
   }
 

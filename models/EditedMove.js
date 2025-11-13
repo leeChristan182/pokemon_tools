@@ -9,7 +9,7 @@ class EditedMove {
 
   // Get all edited moves
   static getAll() {
-    const stmt = db.prepare("SELECT * FROM edited_moves");
+    const stmt = db.prepare("SELECT * FROM edited_moves ORDER BY updated_at DESC");
     return stmt.all();
   }
 

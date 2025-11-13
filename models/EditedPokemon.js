@@ -9,7 +9,7 @@ class EditedPokemon {
 
   // Get all edited pokemon
   static getAll() {
-    const stmt = db.prepare("SELECT * FROM edited_pokemon");
+    const stmt = db.prepare("SELECT * FROM edited_pokemon ORDER BY updated_at DESC");
     return stmt.all();
   }
 
@@ -17,7 +17,8 @@ class EditedPokemon {
   static upsert(pokemonData) {
     const stmt = db.prepare(`
       INSERT INTO edited_pokemon 
-        (pokemon_id, pokemon_name, flavor_text, classification, abilities, habitat, egg_groups, growth_rate, custom_notes, updated_at)
+        (pokemon_id, pokemon_name, flavor_text, classification, abilities, 
+         habitat, egg_groups, growth_rate, custom_notes, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(pokemon_id) DO UPDATE SET
         pokemon_name = excluded.pokemon_name,

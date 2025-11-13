@@ -81,14 +81,15 @@ if (distExists) {
         "GET  /api/quiz-scores/leaderboard - Get leaderboard",
         "POST /api/berry-scores - Save berry game score",
         "GET  /api/berry-scores - Get berry game scores",
-        "POST /api/teams - Save Pokemon team",
-        "GET  /api/teams - Get all teams",
-        "GET  /api/teams/:id - Get single team",
-        "PUT  /api/teams/:id - Update team",
-        "DELETE /api/teams/:id - Delete team",
-        "POST /api/favorites - Add favorite",
-        "GET  /api/favorites/user/:userId - Get favorites",
-        "DELETE /api/favorites/:userId/:pokemonId - Remove favorite"
+        "GET  /api/pokemon/:id - Get Pokemon with edited data",
+        "GET  /api/item/:id - Get item with edited data",
+        "GET  /api/move/:name - Get move with edited data",
+        "GET  /api/edited-pokemon - Get all edited Pokemon",
+        "POST /api/edited-pokemon - Create/update edited Pokemon",
+        "GET  /api/edited-items - Get all edited items",
+        "POST /api/edited-items - Create/update edited item",
+        "GET  /api/edited-moves - Get all edited moves",
+        "POST /api/edited-moves - Create/update edited move"
       ]
     });
   });

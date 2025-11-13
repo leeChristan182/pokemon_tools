@@ -16,7 +16,12 @@ router.get("/", (req, res) => {
 // Get single edited move by name
 router.get("/:name", (req, res) => {
   try {
-    const moveName = req.params.name.toLowerCase();
+    const moveName = req.params.name.toLowerCase().trim();
+    
+    if (!moveName) {
+      return res.status(400).json({ error: "Move name is required" });
+    }
+    
     const editedMove = EditedMove.getByName(moveName);
     
     if (!editedMove) {
@@ -33,6 +38,12 @@ router.get("/:name", (req, res) => {
 // Create or update edited move
 router.post("/", (req, res) => {
   try {
+    const { move_name } = req.body;
+    
+    if (!move_name || !move_name.trim()) {
+      return res.status(400).json({ error: "Move name is required" });
+    }
+    
     const result = EditedMove.upsert(req.body);
     res.status(201).json({ 
       message: "Move data saved successfully", 

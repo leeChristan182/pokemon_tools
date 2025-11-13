@@ -2,14 +2,14 @@ const db = require("../config/database");
 
 class FavoritePokemon {
   // Add a favorite Pokemon
-  static add(pokemonId, pokemonName) {
+  static add(userId, pokemonId, pokemonName) {
     try {
       const stmt = db.prepare(`
-        INSERT INTO favorite_pokemon (pokemon_id, pokemon_name)
-        VALUES (?, ?)
+        INSERT INTO favorite_pokemon (user_id, pokemon_id, pokemon_name)
+        VALUES (?, ?, ?)
       `);
-      const result = stmt.run(pokemonId, pokemonName);
-      return { id: result.lastInsertRowid, pokemonId, pokemonName };
+      const result = stmt.run(userId, pokemonId, pokemonName);
+      return { id: result.lastInsertRowid, userId, pokemonId, pokemonName };
     } catch (error) {
       // Handle duplicate entry
       if (error.message.includes("UNIQUE constraint failed")) {
@@ -19,39 +19,41 @@ class FavoritePokemon {
     }
   }
 
-  // Get all favorites
-  static getAll() {
+  // Get all favorites for a user
+  static getByUser(userId) {
     const stmt = db.prepare(`
       SELECT * FROM favorite_pokemon
+      WHERE user_id = ?
       ORDER BY added_at DESC
     `);
-    return stmt.all();
+    return stmt.all(userId);
   }
 
-  // Check if a Pokemon is favorited
-  static isFavorite(pokemonId) {
+  // Check if a Pokemon is favorited by a user
+  static isFavorite(userId, pokemonId) {
     const stmt = db.prepare(`
       SELECT id FROM favorite_pokemon
-      WHERE pokemon_id = ?
+      WHERE user_id = ? AND pokemon_id = ?
     `);
-    return stmt.get(pokemonId) !== undefined;
+    return stmt.get(userId, pokemonId) !== undefined;
   }
 
   // Remove a favorite
-  static remove(pokemonId) {
+  static remove(userId, pokemonId) {
     const stmt = db.prepare(`
       DELETE FROM favorite_pokemon
-      WHERE pokemon_id = ?
+      WHERE user_id = ? AND pokemon_id = ?
     `);
-    return stmt.run(pokemonId);
+    return stmt.run(userId, pokemonId);
   }
 
-  // Get favorite count
-  static getCount() {
+  // Get favorite count for a user
+  static getCount(userId) {
     const stmt = db.prepare(`
       SELECT COUNT(*) as count FROM favorite_pokemon
+      WHERE user_id = ?
     `);
-    return stmt.get().count;
+    return stmt.get(userId).count;
   }
 }
 
