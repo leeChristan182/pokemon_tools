@@ -35,6 +35,9 @@
         <h1 class="poke-title">#{{ pokemon.id }} {{ capitalize(pokemon.name) }}</h1>
         <div class="classification">{{ classification }}</div>
 
+        <!-- Edited badge -->
+        <div v-if="isEdited" class="edited-badge">✏️ Edited</div>
+
         <!-- types -->
         <div class="types-row">
           <span
@@ -138,6 +141,22 @@
 
             <div class="flavor-box">
               <em>{{ flavorText }}</em>
+            </div>
+
+            <!-- Custom Notes -->
+            <div v-if="customNotes" class="custom-notes-box">
+              <strong>📝 Your Notes:</strong>
+              <p>{{ customNotes }}</p>
+            </div>
+
+            <!-- Edit Controls -->
+            <div class="edit-controls">
+              <button @click="openEditModal" class="btn-edit">
+                <span>✏️</span> {{ isEdited ? 'Edit Again' : 'Edit Info' }}
+              </button>
+              <button v-if="isEdited" @click="revertEdits" class="btn-revert">
+                <span>🔄</span> Revert to Original
+              </button>
             </div>
           </div>
 
@@ -262,6 +281,63 @@
         </div>
       </section>
     </div>
+
+    <!-- Edit Modal -->
+    <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
+      <div class="modal-content" @click.stop>
+        <h2>Edit {{ capitalize(pokemon?.name || '') }}</h2>
+        
+        <div class="form-group">
+          <label>Description / Flavor Text</label>
+          <textarea 
+            v-model="editForm.flavor_text" 
+            rows="4"
+            placeholder="Enter custom description..."
+          ></textarea>
+          <small>Original: {{ originalFlavorText }}</small>
+        </div>
+
+        <div class="form-group">
+          <label>Classification</label>
+          <input 
+            v-model="editForm.classification" 
+            type="text"
+            placeholder="e.g., Electric Mouse Pokémon"
+          />
+          <small>Original: {{ originalClassification }}</small>
+        </div>
+
+        <div class="form-group">
+          <label>Habitat</label>
+          <input 
+            v-model="editForm.habitat" 
+            type="text"
+            placeholder="e.g., Forest"
+          />
+          <small>Original: {{ originalHabitat }}</small>
+        </div>
+
+        <div class="form-group">
+          <label>Your Personal Notes</label>
+          <textarea 
+            v-model="editForm.custom_notes" 
+            rows="3"
+            placeholder="Add your own notes about this Pokémon..."
+          ></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button @click="saveEdits" class="btn-save" :disabled="saving">
+            {{ saving ? 'Saving...' : 'Save Changes' }}
+          </button>
+          <button @click="closeEditModal" class="btn-cancel" :disabled="saving">
+            Cancel
+          </button>
+        </div>
+        
+        <div v-if="saveError" class="error-message">{{ saveError }}</div>
+      </div>
+    </div>
   </div>
 
   <div v-else class="loading">Loading Pokémon…</div>
@@ -270,6 +346,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios'
 import PhysicalIcon from '@/assets/icons/Physical.png'
 import SpecialIcon from '@/assets/icons/Special.png'
 import StatusIcon from '@/assets/icons/Status.png'
@@ -304,6 +381,19 @@ const nextId = ref(null)
 const prevName = ref('')
 const nextName = ref('')
 
+/* edit state */
+const isEdited = ref(false)
+const customData = ref(null)
+const showEditModal = ref(false)
+const saving = ref(false)
+const saveError = ref('')
+const editForm = ref({
+  flavor_text: '',
+  classification: '',
+  habitat: '',
+  custom_notes: ''
+})
+
 /* derived */
 const pokemonLoaded = computed(() => !!pokemon.value && !!species.value)
 const pokemonSprite = computed(() => {
@@ -324,6 +414,21 @@ const evYieldText = computed(() => {
 
   return yields.length ? yields.join(', ') : 'None'
 })
+
+const customNotes = computed(() => customData.value?.custom_notes || '')
+
+const originalFlavorText = computed(() => {
+  return (species.value?.flavor_text_entries || [])
+    .find((e) => e.language?.name === 'en')
+    ?.flavor_text?.replace(/\f/g, ' ') || 'No description available.'
+})
+
+const originalClassification = computed(() => {
+  const genObj = (species.value?.genera || []).find((g) => g.language?.name === 'en')
+  return genObj?.genus || ''
+})
+
+const originalHabitat = computed(() => species.value?.habitat?.name || 'Unknown')
 
 /* helpers */
 const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '')
@@ -347,17 +452,24 @@ async function fetchPokemon(idOrName) {
     normalAgainst.value = []
     forms.value = []
     currentTab.value = 'Info'
+    isEdited.value = false
+    customData.value = null
 
-    // main pokemon resource
-    const p = await fetchJSON(`https://pokeapi.co/api/v2/pokemon/${idOrName}`)
+    // Use backend proxy to get pokemon with edited data merged
+    const response = await axios.get(`http://localhost:5000/api/pokemon/${idOrName}`)
+    const p = response.data
     pokemon.value = p
 
-    // species
-    species.value = await fetchJSON(p.species.url)
+    // Check if this pokemon has been edited
+    isEdited.value = p.edited || false
+    customData.value = p.custom_data || null
 
-    // classification
+    // species (already included in response)
+    species.value = p.species_data || await fetchJSON(p.species.url)
+
+    // Use custom data if edited, otherwise use original
     const genObj = (species.value.genera || []).find((g) => g.language?.name === 'en')
-    classification.value = genObj?.genus || ''
+    classification.value = customData.value?.classification || genObj?.genus || ''
 
     // abilities
     abilities.value = (p.abilities || [])
@@ -365,9 +477,9 @@ async function fetchPokemon(idOrName) {
       .join(', ')
 
     eggGroups.value = (species.value.egg_groups || []).map((g) => g.name).join(', ') || '—'
-    habitat.value = species.value.habitat?.name || 'Unknown'
+    habitat.value = customData.value?.habitat || species.value.habitat?.name || 'Unknown'
     growthRate.value = species.value.growth_rate?.name || 'Unknown'
-    flavorText.value =
+    flavorText.value = customData.value?.flavor_text ||
       (species.value.flavor_text_entries || [])
         .find((e) => e.language?.name === 'en')
         ?.flavor_text?.replace(/\f/g, ' ') || 'No description available.'
@@ -530,6 +642,63 @@ watch(
     if (id) fetchPokemon(id)
   },
 )
+
+/* edit functions */
+function openEditModal() {
+  editForm.value = {
+    flavor_text: customData.value?.flavor_text || flavorText.value,
+    classification: customData.value?.classification || classification.value,
+    habitat: customData.value?.habitat || habitat.value,
+    custom_notes: customData.value?.custom_notes || ''
+  }
+  showEditModal.value = true
+  saveError.value = ''
+}
+
+function closeEditModal() {
+  showEditModal.value = false
+  saveError.value = ''
+}
+
+async function saveEdits() {
+  saving.value = true
+  saveError.value = ''
+  
+  try {
+    await axios.post('http://localhost:5000/api/edited-pokemon', {
+      pokemon_id: pokemon.value.id,
+      pokemon_name: pokemon.value.name,
+      flavor_text: editForm.value.flavor_text,
+      classification: editForm.value.classification,
+      habitat: editForm.value.habitat,
+      custom_notes: editForm.value.custom_notes
+    })
+    
+    // Refresh Pokemon data to show changes
+    await fetchPokemon(pokemon.value.id)
+    
+    closeEditModal()
+  } catch (error) {
+    console.error('Error saving edits:', error)
+    saveError.value = 'Failed to save changes. Please try again.'
+  } finally {
+    saving.value = false
+  }
+}
+
+async function revertEdits() {
+  if (!confirm(`Revert ${capitalize(pokemon.value.name)} to original data?`)) {
+    return
+  }
+  
+  try {
+    await axios.delete(`http://localhost:5000/api/edited-pokemon/${pokemon.value.id}`)
+    await fetchPokemon(pokemon.value.id)
+  } catch (error) {
+    console.error('Error reverting edits:', error)
+    alert('Failed to revert changes.')
+  }
+}
 
 onMounted(() => {
   if (route.params.id) fetchPokemon(route.params.id)
@@ -1025,4 +1194,259 @@ onMounted(() => {
   color: #444;
   font-weight: 600;
 }
+
+/* ===== EDIT FUNCTIONALITY STYLES ===== */
+
+/* Edited badge */
+.edited-badge {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #ffc107, #ff9800);
+  color: #000;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
+}
+
+/* Custom notes box */
+.custom-notes-box {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #e3f2fd, #f0f8ff);
+  border-left: 4px solid #2196F3;
+  border-radius: 6px;
+}
+
+.custom-notes-box strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #1976D2;
+}
+
+.custom-notes-box p {
+  margin: 0;
+  line-height: 1.5;
+  color: #333;
+}
+
+/* Edit controls */
+.edit-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.btn-edit, .btn-revert {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-edit {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  color: white;
+  flex: 1;
+}
+
+.btn-edit:hover {
+  background: linear-gradient(135deg, #1976D2, #1565C0);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.btn-revert {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: white;
+}
+
+.btn-revert:hover {
+  background: linear-gradient(135deg, #f57c00, #ef6c00);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal content */
+.modal-content {
+  background: white;
+  padding: 32px;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-content h2 {
+  margin: 0 0 24px 0;
+  color: #1976D2;
+  font-size: 24px;
+}
+
+/* Form groups */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #2196F3;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-group small {
+  display: block;
+  margin-top: 6px;
+  color: #757575;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Modal actions */
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.btn-save, .btn-cancel {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: linear-gradient(135deg, #45a049, #3d8b40);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  background: linear-gradient(135deg, #f44336, #da190b);
+  color: white;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: linear-gradient(135deg, #da190b, #c41408);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
+.btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Error message */
+.error-message {
+  margin-top: 16px;
+  padding: 12px;
+  background: #ffebee;
+  color: #c62828;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    padding: 24px;
+  }
+  
+  .edit-controls {
+    flex-direction: column;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+}
 </style>
+
