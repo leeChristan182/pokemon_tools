@@ -516,7 +516,7 @@ async function fetchPokemon(idOrName) {
     // calculate type matchups (strong/weak/normal)
     await calculateTypeMatchups(p.types.map((t) => t.type.name))
   } catch (err) {
-    console.error('fetchPokemon error', err)
+    console.error('Error fetching Pokemon:', err)
   }
 }
 
@@ -594,7 +594,7 @@ async function calculateTypeMatchups(typeNames) {
       (k) => attackMult[k] === 1 && defenseMult[k] === 1,
     )
   } catch (err) {
-    console.error('calculateTypeMatchups error', err)
+    console.error('Error calculating type matchups:', err)
     strongAgainst.value = []
     weakAgainst.value = []
     normalAgainst.value = []
@@ -623,9 +623,8 @@ async function getMoveDetails(moveName) {
       damage_class: m.damage_class,
       flavor_text: flavor.replace(/\f/g, ' '),
     }
-    // open moves tab details visible already because we're on Moves tab when clicking
   } catch (e) {
-    console.error('getMoveDetails', e)
+    console.error('Error fetching move details:', e)
   }
 }
 

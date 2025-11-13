@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 require("dotenv").config();
 
 // Initialize database
@@ -37,12 +38,8 @@ app.use("/api/pokemon", pokemonRouter);
 app.use("/api/item", itemsRouter);
 app.use("/api/move", movesRouter);
 
-// --- Serve the built Vue frontend (production mode only) ---
-const __dirnamePath = path.resolve();
-const distPath = path.join(__dirnamePath, "frontend/dist");
-const fs = require("fs");
-
-// Check if dist folder exists (production build)
+// Serve the built Vue frontend (production mode only)
+const distPath = path.join(__dirname, "frontend/dist");
 const distExists = fs.existsSync(distPath);
 
 if (distExists) {
@@ -50,12 +47,12 @@ if (distExists) {
   app.use(express.static(distPath));
 }
 
-// Example API route
+// API info endpoint
 app.get("/api", (req, res) => {
   res.json({ 
-    message: "Hello from Express backend API!",
+    message: "Pokemon Tools API",
     mode: distExists ? "production" : "development",
-    note: distExists ? "Serving built frontend" : "Run 'npm run build' in frontend folder to build the frontend"
+    version: "1.0.0"
   });
 });
 

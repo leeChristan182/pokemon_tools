@@ -130,10 +130,8 @@ async function endGame(forced = false) {
         total_questions: totalPokemon,
         quiz_type: quizTypeLabel
       });
-      
-      console.log('✅ Quiz score saved to database!');
     } catch (error) {
-      console.error('❌ Failed to save quiz score:', error);
+      console.error('Failed to save quiz score:', error);
     }
   }
 }

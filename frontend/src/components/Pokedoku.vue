@@ -599,10 +599,8 @@ async function saveGameToDatabase() {
       score: correct.value,
       completed: true
     });
-    
-    console.log('✅ Pokedoku game saved to database!');
   } catch (error) {
-    console.error('❌ Failed to save Pokedoku game:', error);
+    console.error('Failed to save Pokedoku game:', error);
   }
 }
 

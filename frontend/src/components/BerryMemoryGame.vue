@@ -203,9 +203,8 @@ async function saveToLeaderboard() {
       moves: moves.value,
       time_seconds: elapsedTime.value
     })
-    console.log('✅ Score saved to database!')
   } catch (error) {
-    console.error('❌ Failed to save score to database:', error)
+    console.error('Failed to save score to database:', error)
     alert('Score saved locally but failed to save to server')
   }
 }
@@ -234,11 +233,10 @@ onMounted(async () => {
   try {
     const response = await axios.get('/api/berry-scores?limit=10')
     if (response.data && response.data.length > 0) {
-      // Merge and show backend scores
-      console.log('✅ Loaded scores from database:', response.data)
+      leaderboard.value = response.data
     }
   } catch (error) {
-    console.log('Using local leaderboard (server not available)')
+    // Use local leaderboard as fallback
   }
 })
 
