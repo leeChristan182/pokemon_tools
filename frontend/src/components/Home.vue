@@ -126,7 +126,7 @@ onMounted(loadFeaturedPokemons)
 /* Subtle animated background shapes */
 .home-dashboard::before {
   content: '';
-  position: absolute;
+  position: fixed;
   top: -10%;
   right: -10%;
   width: 400px;
@@ -134,10 +134,11 @@ onMounted(loadFeaturedPokemons)
   background: radial-gradient(circle, #90caf9 20%, transparent 70%);
   filter: blur(100px);
   opacity: 0.4;
+  z-index: -1;
 }
 .home-dashboard::after {
   content: '';
-  position: absolute;
+  position: fixed;
   bottom: -10%;
   left: -10%;
   width: 350px;
@@ -145,6 +146,7 @@ onMounted(loadFeaturedPokemons)
   background: radial-gradient(circle, #ffcc80 20%, transparent 70%);
   filter: blur(100px);
   opacity: 0.4;
+  z-index: -1;
 }
 
 /* --- HERO --- */
@@ -175,14 +177,16 @@ onMounted(loadFeaturedPokemons)
   width: 100%;
   display: flex;
   justify-content: center;
+  align-items: center;
   z-index: 2;
 }
 .nav-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  display: flex;
   gap: 2rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
   width: 100%;
-  max-width: 900px;
 }
 .nav-card {
   background: rgba(255, 255, 255, 0.85);
@@ -190,11 +194,17 @@ onMounted(loadFeaturedPokemons)
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(8px);
   text-align: center;
-  padding: 1.2rem 1rem;
+  padding: 0.8rem 1.5rem;
   text-decoration: none;
   color: #212121;
   font-weight: 600;
   transition: all 0.3s ease;
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 .nav-card:hover {
   transform: translateY(-6px) scale(1.03);
@@ -254,8 +264,10 @@ onMounted(loadFeaturedPokemons)
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   margin-top: 2rem;
   color: #555;
+  text-align: center;
 }
 .loader {
   width: 30px;

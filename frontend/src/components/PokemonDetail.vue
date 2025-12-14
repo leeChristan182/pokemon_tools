@@ -8,20 +8,20 @@
       class="side-nav left-side"
       v-if="prevId"
       @click="goToPokemon(prevId)"
-      :title="prevName ? `Prev: ${prevName}` : 'Prev'"
+      :title="prevName ? `Prev: ${capitalize(prevName)}` : 'Prev'"
     >
       <div class="edge-label">←</div>
-      <div class="edge-name" v-if="prevName">{{ prevName }}</div>
+      <div class="edge-name" v-if="prevName">{{ capitalize(prevName) }}</div>
     </div>
 
     <div
       class="side-nav right-side"
       v-if="nextId"
       @click="goToPokemon(nextId)"
-      :title="nextName ? `Next: ${nextName}` : 'Next'"
+      :title="nextName ? `Next: ${capitalize(nextName)}` : 'Next'"
     >
       <div class="edge-label">→</div>
-      <div class="edge-name" v-if="nextName">{{ nextName }}</div>
+      <div class="edge-name" v-if="nextName">{{ capitalize(nextName) }}</div>
     </div>
 
     <!-- Main full-page content -->
@@ -29,7 +29,7 @@
       <!-- LEFT: big display box (image, name, forms) -->
       <section class="display-card">
         <div class="image-wrap">
-          <img :src="pokemonSprite" :alt="pokemon?.name" class="pokemon-img" />
+          <img :src="pokemonSprite" :alt="pokemon?.name" :class="['pokemon-img', { 'placeholder': isPlaceholder }]" />
         </div>
 
         <h1 class="poke-title">#{{ pokemon.id }} {{ capitalize(pokemon.name) }}</h1>
@@ -46,7 +46,7 @@
             class="type-badge"
             :class="t.type.name"
           >
-            {{ t.type.name }}
+            {{ capitalize(t.type.name) }}
           </span>
         </div>
 
@@ -57,9 +57,9 @@
             :key="f.name"
             :class="['form-chip', { active: f.name === pokemon.name }]"
             @click="switchForm(f)"
-            :title="'Switch to ' + f.name"
+            :title="'Switch to ' + capitalize(f.name)"
           >
-            {{ f.name }}
+            {{ capitalize(f.name) }}
           </button>
         </div>
       </section>
@@ -91,7 +91,7 @@
                 class="type-badge"
                 :class="t.type.name"
               >
-                {{ t.type.name }}
+                {{ capitalize(t.type.name) }}
               </span>
             </div>
 
@@ -115,7 +115,7 @@
               </div>
               <div>
                 <strong>Abilities</strong>
-                <div class="meta abilities">{{ abilities }}</div>
+                <div class="meta">{{ abilities }}</div>
               </div>
               <div>
                 <strong>Egg Groups</strong>
@@ -165,7 +165,7 @@
             <h3 class="section-heading">Base Stats</h3>
             <div class="stats-list">
               <div v-for="s in pokemon.stats" :key="s.stat.name" class="stat-row">
-                <div class="stat-name">{{ s.stat.name }}</div>
+                <div class="stat-name">{{ capitalize(s.stat.name) }}</div>
                 <div class="stat-bar">
                   <div class="stat-fill" :style="{ width: statPct(s.base_stat) }"></div>
                 </div>
@@ -255,7 +255,7 @@
               <h4>Strong Against</h4>
               <div class="types-list">
                 <span v-for="t in strongAgainst" :key="t" class="type-badge" :class="t">{{
-                  t
+                  capitalize(t)
                 }}</span>
                 <span v-if="strongAgainst.length === 0" class="muted">None</span>
               </div>
@@ -264,7 +264,7 @@
             <div class="weak-block">
               <h4>Weak Against</h4>
               <div class="types-list">
-                <span v-for="t in weakAgainst" :key="t" class="type-badge" :class="t">{{ t }}</span>
+                <span v-for="t in weakAgainst" :key="t" class="type-badge" :class="t">{{ capitalize(t) }}</span>
                 <span v-if="weakAgainst.length === 0" class="muted">None</span>
               </div>
             </div>
@@ -273,7 +273,7 @@
               <h4>Normal Against</h4>
               <div class="types-list">
                 <span v-for="t in normalAgainst" :key="t" class="type-badge" :class="t">{{
-                  t
+                  capitalize(t)
                 }}</span>
               </div>
             </div>
@@ -398,12 +398,20 @@ const editForm = ref({
 const pokemonLoaded = computed(() => !!pokemon.value && !!species.value)
 const pokemonSprite = computed(() => {
   if (!pokemon.value) return ''
-  return (
-    pokemon.value.sprites?.other?.['official-artwork']?.front_default ||
+  const sprite = pokemon.value.sprites?.other?.['official-artwork']?.front_default ||
     pokemon.value.sprites?.other?.dream_world?.front_default ||
-    pokemon.value.sprites?.front_default ||
-    ''
-  )
+    pokemon.value.sprites?.front_default
+  
+  // Fallback to a placeholder if no sprite available (for new forms not yet in API)
+  return sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'
+})
+
+const isPlaceholder = computed(() => {
+  if (!pokemon.value) return false
+  const sprite = pokemon.value.sprites?.other?.['official-artwork']?.front_default ||
+    pokemon.value.sprites?.other?.dream_world?.front_default ||
+    pokemon.value.sprites?.front_default
+  return !sprite
 })
 const evYieldText = computed(() => {
   if (!pokemon.value?.stats) return 'None'
@@ -431,7 +439,15 @@ const originalClassification = computed(() => {
 const originalHabitat = computed(() => species.value?.habitat?.name || 'Unknown')
 
 /* helpers */
-const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '')
+const capitalize = (s) => {
+  if (!s) return ''
+  // Capitalize each word separated by hyphens or spaces
+  return s.split(/(-|\s)/).map(word => 
+    word.length > 0 && word !== '-' && word !== ' ' 
+      ? word.charAt(0).toUpperCase() + word.slice(1) 
+      : word
+  ).join('')
+}
 
 /* percent for stats: cap relative to 255 to avoid >100% width */
 const statPct = (v) => `${Math.min(100, Math.round((v / 255) * 100))}%`
@@ -473,12 +489,12 @@ async function fetchPokemon(idOrName) {
 
     // abilities
     abilities.value = (p.abilities || [])
-      .map((a) => `${a.ability.name}${a.is_hidden ? ' (Hidden)' : ''}`)
+      .map((a) => `${capitalize(a.ability.name)}${a.is_hidden ? ' (Hidden)' : ''}`)
       .join(', ')
 
-    eggGroups.value = (species.value.egg_groups || []).map((g) => g.name).join(', ') || '—'
-    habitat.value = customData.value?.habitat || species.value.habitat?.name || 'Unknown'
-    growthRate.value = species.value.growth_rate?.name || 'Unknown'
+    eggGroups.value = (species.value.egg_groups || []).map((g) => capitalize(g.name)).join(', ') || '—'
+    habitat.value = capitalize(customData.value?.habitat || species.value.habitat?.name || 'Unknown')
+    growthRate.value = capitalize(species.value.growth_rate?.name || 'Unknown')
     flavorText.value = customData.value?.flavor_text ||
       (species.value.flavor_text_entries || [])
         .find((e) => e.language?.name === 'en')
@@ -797,6 +813,7 @@ onMounted(() => {
 /* image scale and containment */
 .image-wrap {
   width: 100%;
+  min-height: 300px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -809,6 +826,11 @@ onMounted(() => {
   transform-origin: center;
   transition: transform 0.25s ease;
   will-change: transform;
+}
+
+.pokemon-img.placeholder {
+  width: 150px;
+  height: 150px;
 }
 
 /* title & classification */

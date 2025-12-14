@@ -26,7 +26,7 @@ const route = useRoute()
 const isHome = computed(() => route.path === '/')
 
 const backgroundStyle = ref({
-  background: 'linear-gradient(180deg, #e3f2fd, #fff)',
+  background: 'linear-gradient(180deg, #66bb6a, #9ccc65, #c8e6c9)',
 })
 
 const typeColors = {
@@ -71,14 +71,12 @@ async function setDailyBackground() {
 
     const image = p.sprites.other['official-artwork'].front_default
     const type = p.types?.[0]?.type?.name || 'normal'
-    const gradient = typeColors[type] || typeColors.rainbow
+    const gradient = typeColors[type] || typeColors.grass
 
     backgroundStyle.value = {
-      background: `${gradient}, url(${image}) center/contain no-repeat`,
+      background: `${gradient}, url(${image}) center/40% no-repeat`,
       backgroundAttachment: 'fixed',
       backgroundBlendMode: 'soft-light',
-      backgroundSize: '40%',
-      backgroundRepeat: 'no-repeat',
       transition: 'background 0.8s ease-in-out',
     }
   } catch (err) {

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import axios from "axios";
 
 const mode = ref("gen"); // "gen" or "general"
@@ -18,6 +18,10 @@ const maxWrong = ref(10);
 
 // Custom time (default 300s)
 const customTime = ref(300);
+
+// Leaderboard
+const showLeaderboard = ref(false);
+const leaderboard = ref([]);
 
 // Gen ranges
 const genRanges = {
@@ -130,11 +134,29 @@ async function endGame(forced = false) {
         total_questions: totalPokemon,
         quiz_type: quizTypeLabel
       });
+      
+      // Refresh leaderboard after saving
+      await fetchLeaderboard();
     } catch (error) {
       console.error('Failed to save quiz score:', error);
     }
   }
 }
+
+// Fetch leaderboard
+async function fetchLeaderboard() {
+  try {
+    const response = await axios.get('/api/quiz-scores/leaderboard');
+    leaderboard.value = response.data;
+  } catch (error) {
+    console.error('Failed to fetch leaderboard:', error);
+  }
+}
+
+// Load leaderboard on mount
+onMounted(() => {
+  fetchLeaderboard();
+});
 </script>
 
 <template>
@@ -171,6 +193,22 @@ async function endGame(forced = false) {
       </label>
 
       <button @click="startGame">Start Quiz</button>
+
+      <!-- Leaderboard Toggle Button -->
+      <button @click="showLeaderboard = !showLeaderboard" style="margin-top: 1rem;">
+        {{ showLeaderboard ? 'Hide Leaderboard' : 'Show Leaderboard' }}
+      </button>
+
+      <!-- Leaderboard Display -->
+      <div v-if="showLeaderboard" class="leaderboard">
+        <h3>🏆 Top Scores</h3>
+        <ul v-if="leaderboard.length > 0">
+          <li v-for="(entry, i) in leaderboard" :key="i">
+            <strong>{{ entry.player_name }}</strong> — {{ entry.best_score }}/{{ entry.games_played }} games (avg: {{ Math.round(entry.avg_score) }})
+          </li>
+        </ul>
+        <p v-else>No scores yet. Be the first!</p>
+      </div>
     </div>
 
     <!-- Game Screen -->
@@ -319,5 +357,41 @@ async function endGame(forced = false) {
     width: 60px;
     height: 60px;
   }
+}
+
+/* --- LEADERBOARD --- */
+.leaderboard {
+  margin-top: 1.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.leaderboard ul {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0 0;
+}
+
+.leaderboard li {
+  background: #f8f8f8;
+  margin: 0.5rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  text-align: left;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.leaderboard li strong {
+  color: #4CAF50;
 }
 </style>
