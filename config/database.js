@@ -49,6 +49,18 @@ const initializeDatabase = () => {
     )
   `);
 
+  // Pokedoku Scores table (for leaderboard)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pokedoku_scores (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      player_name TEXT NOT NULL,
+      moves_used INTEGER NOT NULL,
+      correct_answers INTEGER NOT NULL,
+      puzzle_difficulty TEXT DEFAULT 'normal',
+      completed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Edited Pokemon data table
   db.exec(`
     CREATE TABLE IF NOT EXISTS edited_pokemon (

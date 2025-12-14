@@ -56,7 +56,7 @@
         <div v-if="showLeaderboard" class="leaderboard">
           <ul>
             <li v-for="(entry, i) in leaderboard" :key="i">
-              {{ entry.grid }}x{{ entry.grid }} — {{ entry.time }}s, {{ entry.moves }} moves
+              <strong>{{ entry.name || 'Anonymous' }}</strong> — {{ entry.grid }}x{{ entry.grid }} — {{ entry.time }}s, {{ entry.moves }} moves
             </li>
           </ul>
         </div>
@@ -185,7 +185,15 @@ function endGame() {
 
 // Leaderboard
 async function saveToLeaderboard() {
-  const record = { grid: gridSize.value, time: elapsedTime.value, moves: moves.value }
+  // Prompt for name first
+  const playerName = prompt('Enter your name for the leaderboard:') || 'Anonymous'
+  
+  const record = { 
+    name: playerName,
+    grid: gridSize.value, 
+    time: elapsedTime.value, 
+    moves: moves.value 
+  }
   
   // Save to localStorage (for offline backup)
   const existing = JSON.parse(localStorage.getItem('memory_leaderboard') || '[]')
@@ -196,7 +204,6 @@ async function saveToLeaderboard() {
   
   // Save to backend database
   try {
-    const playerName = prompt('Enter your name for the leaderboard:') || 'Anonymous'
     await axios.post('/api/berry-scores', {
       player_name: playerName,
       score: score.value,
@@ -205,7 +212,7 @@ async function saveToLeaderboard() {
     })
   } catch (error) {
     console.error('Failed to save score to database:', error)
-    alert('Score saved locally but failed to save to server')
+    // Don't show alert - score is already saved locally
   }
 }
 

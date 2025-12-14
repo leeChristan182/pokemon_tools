@@ -93,15 +93,25 @@ const allTypes = [
   'fairy',
 ]
 
-// ✅ Fetch ALL Pokémon
+// Fetch Pokémon - optimized version with types
 async function fetchAllPokemon() {
   loading.value = true
   const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=1025`)
   const data = await res.json()
 
-  const details = await Promise.all(data.results.map((p) => fetch(p.url).then((r) => r.json())))
+  // Fetch types in chunks for better performance
+  const chunkSize = 100
+  const allPokemonData = []
+  
+  for (let i = 0; i < data.results.length; i += chunkSize) {
+    const chunk = data.results.slice(i, i + chunkSize)
+    const chunkDetails = await Promise.all(
+      chunk.map((p) => fetch(p.url).then((r) => r.json()))
+    )
+    allPokemonData.push(...chunkDetails)
+  }
 
-  allPokemon.value = details.map((d) => ({
+  allPokemon.value = allPokemonData.map((d) => ({
     id: d.id,
     name: d.name,
     sprite: d.sprites.front_default,
@@ -171,6 +181,7 @@ function goToPage(p) {
   font-weight: 800;
   background: linear-gradient(90deg, #202020, #1e1d1d, #3f3e38);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   text-align: center;
   letter-spacing: 2px;
@@ -189,7 +200,8 @@ function goToPage(p) {
     3px 3px 0 #0a285f,
     0 0 8px #ffec80; /* subtle yellow glow */
   letter-spacing: 1px;
-  -webkit-background-clip: initial; /* reset inherited gradient */
+  -webkit-background-clip: initial;
+  background-clip: initial;
   -webkit-text-fill-color: initial;
 }
 
@@ -215,6 +227,7 @@ function goToPage(p) {
   font-weight: bold;
   color: #3b82f6;
   margin: 20px 0;
+  text-align: center;
 }
 
 /* Grid */

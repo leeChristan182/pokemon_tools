@@ -9,6 +9,20 @@
       <button @click="toggleUnlimited" :class="{ on: unlimited }">
         {{ unlimited ? 'Unlimited: ON' : 'Unlimited Guesses' }}
       </button>
+      <button @click="showLeaderboard = !showLeaderboard">
+        {{ showLeaderboard ? 'Hide Leaderboard' : 'Show Leaderboard' }}
+      </button>
+    </div>
+
+    <!-- Leaderboard Display -->
+    <div v-if="showLeaderboard" class="leaderboard">
+      <h3>🏆 Top Scores (Perfect Games)</h3>
+      <ul v-if="leaderboard.length > 0">
+        <li v-for="(entry, i) in leaderboard" :key="i">
+          <strong>{{ entry.player_name }}</strong> — {{ entry.moves_used }} moves
+        </li>
+      </ul>
+      <p v-else>No perfect games yet. Be the first to complete all 9 cells!</p>
     </div>
 
     <!-- Stats / Moves, Correct, Incorrect -->
@@ -184,6 +198,10 @@ const isWin = ref(false)
 const revealed = ref(false)
 const isSearchingGiveUp = ref(false)
 const unlimited = ref(false)
+
+// Leaderboard
+const showLeaderboard = ref(false)
+const leaderboard = ref([])
 
 /* Popup search state */
 const activeCell = ref(null)
@@ -599,8 +617,31 @@ async function saveGameToDatabase() {
       score: correct.value,
       completed: true
     });
+
+    // Save score to leaderboard if all correct
+    if (correct.value === GRID * GRID) {
+      const playerName = prompt('🎉 You completed the puzzle! Enter your name for the leaderboard:') || 'Anonymous';
+      await axios.post('/api/pokedoku-scores', {
+        player_name: playerName,
+        moves_used: movesUsed.value,
+        correct_answers: correct.value,
+        puzzle_difficulty: 'normal'
+      });
+      // Refresh leaderboard
+      await fetchLeaderboard();
+    }
   } catch (error) {
     console.error('Failed to save Pokedoku game:', error);
+  }
+}
+
+// Fetch leaderboard
+async function fetchLeaderboard() {
+  try {
+    const response = await axios.get('/api/pokedoku-scores/leaderboard');
+    leaderboard.value = response.data;
+  } catch (error) {
+    console.error('Failed to fetch leaderboard:', error);
   }
 }
 
@@ -609,6 +650,7 @@ onMounted(async () => {
   await fetchAllSpecies()
   randomizeLabels()
   resetBoard()
+  await fetchLeaderboard()
 })
 </script>
 
@@ -884,5 +926,45 @@ onMounted(async () => {
   border-radius: 10px;
   color: #f8fafc;
   text-align: center;
+}
+
+/* Leaderboard */
+.leaderboard {
+  margin: 1.5rem auto;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 600px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.leaderboard ul {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0 0;
+}
+
+.leaderboard li {
+  background: #f8f8f8;
+  margin: 0.5rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  text-align: left;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  color: #000;
+}
+
+.leaderboard li strong {
+  color: #4CAF50;
+}
+
+.leaderboard p {
+  color: #666;
+  font-style: italic;
 }
 </style>
